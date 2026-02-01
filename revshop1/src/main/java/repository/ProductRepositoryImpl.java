@@ -3,6 +3,8 @@ package repository;
 import dto.CategoryDTO;
 import dto.ProductDTO;
 import enumeration.ConnectionEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -10,8 +12,13 @@ import java.util.List;
 
 public class ProductRepositoryImpl implements  ProductRepository{
 
+
+    private static final Logger log =
+            LoggerFactory.getLogger(BuyerProductRepositoryImpl.class);
+
     @Override
     public boolean saveProductDetails(ProductDTO productDTO) {
+
         String sql = " INSERT INTO product (seller_id, product_name, description, manufacturer, mrp, selling_price, stock, stock_threshold, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection con = DriverManager.getConnection(ConnectionEnum.URL.getValue(), ConnectionEnum.USERNAME.getValue(), ConnectionEnum.PASSWORD.getValue());
@@ -104,8 +111,8 @@ public class ProductRepositoryImpl implements  ProductRepository{
     }
 
     @Override
-    public boolean updateProductDetailsById(int productId, double discountedPrice, int stock, int stockThreshold) {
-        String sql = " update product set selling_price = ? , stock = ? , stock_threshold = ? where product_id = ?";
+    public boolean updateProductDetailsById(int productId,double mrp, double discountedPrice, int stock, int stockThreshold) {
+        String sql = " update product set selling_price = ? , stock = ? , stock_threshold = ? , mrp = ? where product_id = ?";
 
         try (Connection con = DriverManager.getConnection(ConnectionEnum.URL.getValue(), ConnectionEnum.USERNAME.getValue(), ConnectionEnum.PASSWORD.getValue());
              PreparedStatement pst = con.prepareStatement(sql)) {
@@ -113,15 +120,25 @@ public class ProductRepositoryImpl implements  ProductRepository{
             pst.setDouble(1, discountedPrice);
             pst.setInt(2, stock);
             pst.setInt(3, stockThreshold);
-            pst.setInt(4, productId);
+            pst.setDouble(4,mrp);
+            pst.setInt(5, productId);
+            int rows = pst.executeUpdate();
+
+            if (rows > 0) {
+                System.out.println("✅ Updated successfully");
+                return true;
+            } else {
+                System.out.println("❌ Product ID does not exist");
+                return false;
+            }
 
 
-            return pst.executeUpdate() > 0;
 
         } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
+
     }
 
     @Override
@@ -150,7 +167,63 @@ public class ProductRepositoryImpl implements  ProductRepository{
         return false;
     }
 
+    @Override
+    public int getSellerIdByProductId(int productId) {
 
+        int sellerId=0;
+        String sql = """
+            SELECT seller_id
+            FROM product
+            WHERE product_id = ?
+        """;
+
+        try (Connection con = DriverManager.getConnection(
+                ConnectionEnum.URL.getValue(),
+                ConnectionEnum.USERNAME.getValue(),
+                ConnectionEnum.PASSWORD.getValue());
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, productId);
+
+            ResultSet rs = ps.executeQuery();
+
+
+            while (rs.next()) {
+
+                 sellerId = rs.getInt("seller_id");
+                return sellerId;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean isProductExistsForSeller(int productId, int sellerId) {
+        String sql = """
+        SELECT 1 FROM product 
+        WHERE product_id = ? AND seller_id = ?
+    """;
+
+        try (Connection con = DriverManager.getConnection(
+                ConnectionEnum.URL.getValue(),
+                ConnectionEnum.USERNAME.getValue(),
+                ConnectionEnum.PASSWORD.getValue());
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, productId);
+            ps.setInt(2, sellerId);
+
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
+
+        } catch (SQLException e) {
+            log.error("Error checking product ownership", e);
+        }
+        return false;
+    }
 
 
 

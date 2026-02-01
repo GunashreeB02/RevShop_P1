@@ -78,8 +78,7 @@ public class RegistrationServiceImpl implements RegistrationService{
             if(password.equals(dto.getPassword()))
             {
                 String username=  repo.getUserNameById(dto.getUserId(),dto.getRole());
-                System.out.println(dto.getRole()+" "+dto.getUserId());
-                System.out.println(username);
+
 
                 return dto.getRole() +","+ username +","+dto.getUserId();
             }

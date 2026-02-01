@@ -18,9 +18,11 @@ public class RevShopRunner {
             System.out.println("3. Login");
             System.out.println("4. Forgot Password");
             System.out.println("==========================");
+
             choice = scanner.nextInt();
 
             switch (choice) {
+
                 case 1:
                     register.registerBuyer();
                     break;

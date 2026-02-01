@@ -3,6 +3,8 @@ package repository;
 import dto.CartItemsDTO;
 import dto.ProductDTO;
 import enumeration.ConnectionEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -10,8 +12,11 @@ import java.util.List;
 
 public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
 
+    private static final Logger log =
+            LoggerFactory.getLogger(BuyerProductRepositoryImpl.class);
     @Override
     public List<ProductDTO> viewAllProducts() {
+        log.debug("Fetching all products from database");
         List<ProductDTO> list = new ArrayList<>();
 
         String sql = """
@@ -39,13 +44,15 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
                 list.add(dto);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Database error while <doing action>", e);
         }
+        log.debug("Total products fetched: {}", list.size());
         return list;
     }
 
     @Override
     public ProductDTO viewProductDetails(int productId) {
+        log.debug("Fetching product details for productId {}", productId);
         String sql = """
         SELECT p.product_name, p.description, p.manufacturer,
                p.mrp, p.selling_price, p.stock,
@@ -85,7 +92,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
                 );
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error fetching product details for productId {}", productId, e);
         }
         return dto;
     }
@@ -125,7 +132,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
                 list.add(dto);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Database error while <doing action>", e);
         }
         return list;
     }
@@ -155,6 +162,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
 
             ResultSet rs = checkPs.executeQuery();
             if (rs.next()) {
+                log.warn("Product {} already in favourites for buyer {}", productId, buyerId);
                 System.out.println("⚠ Product already in favourites");
                 return false;
             }
@@ -171,7 +179,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
             if (e.getErrorCode() == 1) {
                 System.out.println("Already in favourites");
             }
-            e.printStackTrace();
+            log.error("Database error while <doing action>", e);
         }
         return false;
     }
@@ -214,7 +222,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Database error while <doing action>", e);
         }
 
         return favourites;
@@ -300,7 +308,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
             return true;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Database error while <doing action>", e);
         }
 
         return false;
@@ -348,7 +356,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Failed to retrieve cart items for buyer {}", buyerId, e);
             System.out.println("Failed to retrieve cart items.");
         }
 
@@ -376,7 +384,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Database error while <doing action>", e);
             return false;
         }
     }
@@ -408,7 +416,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Database error while <doing action>", e);
             return false;
         }
     }
@@ -434,7 +442,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Database error while <doing action>", e);
             return false;
         }
     }
@@ -468,7 +476,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Database error while <doing action>", e);
         }
 
         return quantity; // 0 means not in cart yet
@@ -477,6 +485,9 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
 
     @Override
     public int getStockByProductId(int productId) {
+
+        log.debug("Fetching stock for product {}", productId);
+
 
         String sql = "SELECT stock FROM product WHERE product_id = ?";
         int stock = 0;
@@ -495,15 +506,90 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Error fetching stock for product {}", productId, e);
         }
 
         return stock; // 0 means out of stock or product not found
     }
 
 
+    @Override
+    public List<ProductDTO> searchByKeyword(String keyword) {
 
+        List<ProductDTO> list = new ArrayList<>();
 
+        String sql = """
+        SELECT p.product_id,
+               p.product_name,
+               p.description,
+               p.selling_price,
+               p.stock,
+               p.manufacturer,
+               c.category_name
+        FROM product p
+        JOIN categories c ON p.category_id = c.category_id
+        WHERE LOWER(p.product_name) LIKE ?
+           OR LOWER(p.description) LIKE ?
+           OR LOWER(p.manufacturer) LIKE ?
+           OR LOWER(c.category_name) LIKE ?
+    """;
+
+        try (Connection con = DriverManager.getConnection(
+                ConnectionEnum.URL.getValue(),
+                ConnectionEnum.USERNAME.getValue(),
+                ConnectionEnum.PASSWORD.getValue());
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            String key = "%" + keyword.toLowerCase() + "%";
+
+            ps.setString(1, key);
+            ps.setString(2, key);
+            ps.setString(3, key);
+            ps.setString(4, key);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                ProductDTO dto = new ProductDTO();
+                dto.setProductId(rs.getInt("product_id"));
+                dto.setProductName(rs.getString("product_name"));
+                dto.setDescription(rs.getString("description"));
+                dto.setSellingPrice(rs.getDouble("selling_price"));
+                dto.setStock(rs.getInt("stock"));
+                dto.setManufacturer(rs.getString("manufacturer"));
+                dto.setCategoryName(rs.getString("category_name"));
+
+                list.add(dto);
+            }
+
+        } catch (SQLException e) {
+            log.error("Database error while <doing action>", e);
+        }
+        return list;
+    }
+
+    @Override
+    public boolean isProductExists(int productId) {
+        String sql = "SELECT 1 FROM product WHERE product_id = ?";
+
+        try (Connection con = DriverManager.getConnection( ConnectionEnum.URL.getValue(),
+                ConnectionEnum.USERNAME.getValue(),
+                ConnectionEnum.PASSWORD.getValue());
+
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            log.error("Error checking product existence", e);
+        }
+
+        return false;
+    }
 
 
 }

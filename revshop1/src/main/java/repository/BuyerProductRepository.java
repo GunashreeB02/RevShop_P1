@@ -30,4 +30,8 @@ public interface BuyerProductRepository {
     int getCartQuantity(int buyerId, int productId);
 
     int getStockByProductId(int productId);
+
+    List<ProductDTO> searchByKeyword(String keyword);
+
+    boolean isProductExists(int productId);
 }

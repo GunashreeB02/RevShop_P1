@@ -12,9 +12,12 @@ public interface ProductRepository {
     List<CategoryDTO> getAllCategories();
 
     List<ProductDTO> getAllProducts(int sellerId);
-    boolean updateProductDetailsById(int productId,double discountedPrice,int stock,int stockThreshold);
+    boolean updateProductDetailsById(int productId,double mrp,double discountedPrice,int stock,int stockThreshold);
 
     boolean deleteProductById(int productId);
 
 
+    int getSellerIdByProductId(int productId);
+
+    boolean isProductExistsForSeller(int productId, int sellerId);
 }

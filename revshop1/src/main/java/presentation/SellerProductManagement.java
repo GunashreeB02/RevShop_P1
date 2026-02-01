@@ -1,11 +1,9 @@
 package presentation;
 
-import dto.CategoryDTO;
-import dto.ProductDTO;
-import service.ProductService;
-import service.ProductServiceImpl;
-import service.RegistrationService;
-import service.RegistrationServiceImpl;
+import dto.*;
+import repository.NotifyRepository;
+import repository.NotifyRepositoryImpl;
+import service.*;
 
 import java.util.List;
 import java.util.Scanner;
@@ -24,8 +22,11 @@ public class SellerProductManagement {
             System.out.println("2. Update Product");
             System.out.println("3. View My Products");
             System.out.println("4. Delete Product");
-            System.out.println("5. Change Password");
-            System.out.println("6. Logout");
+            System.out.println("5. View Orders for your Products");
+            System.out.println("6. View Notifications");
+            System.out.println("7. View Reviews and Ratings");
+            System.out.println("8. Change Password");
+            System.out.println("9. Logout");
 
             choice = sc.nextInt();
 
@@ -42,15 +43,104 @@ public class SellerProductManagement {
                 case 4:
                     deleteProduct(sellerId);
                     break;
-                case 5:
+
+                case 5: viewOrdersPlaced(sellerId);
+                       break;
+
+                case 6: viewnotifications(sellerId);
+                break;
+
+                case 7: viewRatingsReview(sellerId);
+                break;
+                case 8:
                     changePassword(sellerId);
                     break;
-                case 6:
+                case 9:
                     return;
                 default:
                     System.out.println("Invalid choice");
             }
         }
+    }
+
+    private void viewRatingsReview(int sellerId) {
+
+        ProductService service = new ProductServiceImpl();
+        List<ReviewDTO> reviews = service.getReviewsAtSeller(sellerId);
+
+        if (reviews.isEmpty()) {
+            System.out.println("No reviews found.");
+            return;
+        }
+
+        System.out.println("========= PRODUCT REVIEWS =========");
+
+        for (ReviewDTO r : reviews) {
+            System.out.println("Product : " + r.getProductName());
+            System.out.println("Buyer   : " + r.getBuyerName());
+            System.out.println("Rating  : " + "⭐".repeat(r.getRating()));
+            System.out.println("Review  : " + r.getReviewComment());
+            System.out.println("Date    : " + r.getReviewDate());
+            System.out.println("----------------------------------");
+        }
+    }
+
+    private void viewnotifications(int sellerId) {
+
+ Scanner scanner = new Scanner(System.in);
+
+        NotifyRepository notifyRepo = new NotifyRepositoryImpl();
+
+        List<NotificationDTO> notifications =
+                notifyRepo.getUnreadNotifications(sellerId);
+
+        if (notifications.isEmpty()) {
+            System.out.println("🔔 No new notifications");
+            return;
+        }
+
+        System.out.println("\n--- 🔔 Notifications ---");
+
+        for (NotificationDTO n : notifications) {
+            System.out.println(
+                    "[" + n.getNotificationId() + "] " +
+                            n.getMessage() + " (" + n.getCreatedAt() + ")"
+            );
+        }
+
+        System.out.print("\nEnter notification ID to mark as read (0 to skip): ");
+        int nid = scanner.nextInt();
+
+        if (nid != 0) {
+            notifyRepo.markAsRead(nid);
+            System.out.println("✅ Notification marked as read");
+        }
+
+
+    }
+
+    private void viewOrdersPlaced(int sellerId) {
+        OrderService service=new OrderServiceImpl();
+
+        System.out.println("===== ORDERS FOR YOUR PRODUCTS =====");
+
+        List<SellerOrderDTO> orders = service.viewOrders(sellerId);
+
+        if (orders.isEmpty()) {
+            System.out.println("No orders placed yet.");
+        } else {
+            for (SellerOrderDTO o : orders) {
+                System.out.println("--------------------------------");
+                System.out.println("Order ID     : " + o.getOrderId());
+                System.out.println("Buyer        : " + o.getBuyerName());
+                System.out.println("Product      : " + o.getProductName());
+                System.out.println("Quantity     : " + o.getQuantity());
+                System.out.println("Price        : ₹" + o.getPrice());
+                System.out.println("Status       : " + o.getOrderStatus());
+                System.out.println("Order Date   : " + o.getOrderDate());
+            }
+        }
+
     }
 
     private void changePassword(int sellerId) {
@@ -143,11 +233,24 @@ public class SellerProductManagement {
         int productId = sc.nextInt();
         System.out.println("Enter new discounted price");
         double discountedPrice = sc.nextDouble();
+        System.out.println("Enter Mrp");
+        double mrp = sc.nextDouble();
+
         System.out.println("Enter new stock quantity");
         int stockQuantity = sc.nextInt();
         System.out.println("Enter new stock threshold");
         int stockThreshold = sc.nextInt();
-        boolean updated=service.updateProductDetailsById(productId,discountedPrice,stockQuantity,stockThreshold);
+        if(discountedPrice>mrp)
+        {
+            System.out.println("Selling price/ Discounted price must be lesser than mrp");
+            if(stockQuantity<stockThreshold)
+            {
+                System.out.println("Stock must be greater than Threshold");
+                return;
+            }
+            return ;
+        }
+        boolean updated=service.updateProductDetailsById(productId,sellerId,mrp,discountedPrice,stockQuantity,stockThreshold);
 
         if(updated)
             System.out.println("updated successfully");

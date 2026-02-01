@@ -23,4 +23,6 @@ public interface BuyerProductService {
     void removeItem(int buyerId, int productId);
 
     List<ProductDTO> viewFavourites(int buyerId);
+
+    List<ProductDTO> searchByKeyword(String keyword);
 }

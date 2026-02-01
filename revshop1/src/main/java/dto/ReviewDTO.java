@@ -4,13 +4,18 @@ import java.time.LocalDateTime;
 
 public class ReviewDTO {
 
+
     private int reviewId;
     private int productId;
     private int buyerId;
+    private int orderId;
+
     private int rating;
     private String reviewComment;
     private LocalDateTime reviewDate;
 
+    private String productName;
+    private String buyerName;
     public ReviewDTO()
     {
 
@@ -78,5 +83,29 @@ public class ReviewDTO {
 
     public void setReviewDate(LocalDateTime reviewDate) {
         this.reviewDate = reviewDate;
+    }
+
+    public void setOrderId(int orderId) {
+        this.orderId = orderId;
+    }
+
+    public int getOrderId() {
+        return orderId;
+    }
+
+    public void setBuyerName(String buyerName) {
+        this.buyerName = buyerName;
+    }
+
+    public String getBuyerName() {
+        return buyerName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public String getProductName() {
+        return productName;
     }
 }

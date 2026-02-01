@@ -128,7 +128,7 @@ public class BuyerSellerregistration {
         else
         {
             String[] role = name.split(",");
-            System.out.println("Welcome "+role[1]);
+            System.out.println("Welcome "+role[1]  +" "+role[0]);
             if(role[0].equals("SELLER"))
             {
                 SellerProductManagement productManagement=new SellerProductManagement();
