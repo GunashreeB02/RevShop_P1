@@ -20,70 +20,69 @@ It supports **user registration, login, product management, order workflows, car
 
 ## Database ER Diagram (Simplified)
 
-```mermaid
 erDiagram
 USERS {
-    NUMBER user_id PK
-    VARCHAR email UNIQUE
-    VARCHAR role
+    user_id
+    email
+    role
 }
 BUYER_DETAILS {
-    NUMBER buyer_id PK FK->USERS.user_id
-    VARCHAR full_name
-    VARCHAR phone UNIQUE
+    buyer_id
+    full_name
+    phone
 }
 SELLER_DETAILS {
-    NUMBER seller_id PK FK->USERS.user_id
-    VARCHAR business_name
-    VARCHAR gst_number UNIQUE
+    seller_id
+    business_name
+    gst_number
 }
 CATEGORIES {
-    NUMBER category_id PK
-    VARCHAR category_name
+    category_id
+    category_name
 }
 PRODUCT {
-    NUMBER product_id PK
-    NUMBER seller_id FK->USERS.user_id
-    VARCHAR product_name
-    NUMBER mrp
-    NUMBER selling_price
-    NUMBER category_id FK->CATEGORIES.category_id
+    product_id
+    seller_id
+    product_name
+    mrp
+    selling_price
+    category_id
 }
 ORDERS {
-    NUMBER order_id PK
-    NUMBER buyer_id FK->USERS.user_id
-    NUMBER total_amount
+    order_id
+    buyer_id
+    total_amount
 }
 ORDER_ITEMS {
-    NUMBER order_item_id PK
-    NUMBER order_id FK->ORDERS.order_id
-    NUMBER product_id FK->PRODUCT.product_id
-    NUMBER quantity
+    order_item_id
+    order_id
+    product_id
+    quantity
 }
 REVIEWS {
-    NUMBER review_id PK
-    NUMBER product_id FK->PRODUCT.product_id
-    NUMBER buyer_id FK->USERS.user_id
-    NUMBER rating
+    review_id
+    product_id
+    buyer_id
+    rating
 }
 CART {
-    NUMBER cart_id PK
-    NUMBER buyer_id FK->USERS.user_id UNIQUE
+    cart_id
+    buyer_id
 }
 CART_ITEMS {
-    NUMBER cart_item_id PK
-    NUMBER cart_id FK->CART.cart_id
-    NUMBER product_id FK->PRODUCT.product_id
+    cart_item_id
+    cart_id
+    product_id
 }
 FAVOURITES {
-    NUMBER favourite_id PK
-    NUMBER buyer_id FK->USERS.user_id
-    NUMBER product_id FK->PRODUCT.product_id
+    favourite_id
+    buyer_id
+    product_id
 }
 NOTIFICATIONS_SELLER {
-    NUMBER notification_id PK
-    NUMBER seller_id FK->USERS.user_id
-    VARCHAR notification_message
+    notification_id
+    seller_id
+    notification_message
 }
 
 USERS ||--|| BUYER_DETAILS : has
