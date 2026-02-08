@@ -22,7 +22,7 @@ It supports **user registration, login, product management, order workflows, car
 
 ```mermaid
 
-   erDiagram
+ erDiagram
 USERS {
     user_id
     email
