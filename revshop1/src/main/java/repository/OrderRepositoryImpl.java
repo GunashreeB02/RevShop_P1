@@ -2,6 +2,8 @@ package repository;
 
 import dto.*;
 import enumeration.ConnectionEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -9,6 +11,8 @@ import java.util.List;
 
 public class OrderRepositoryImpl implements OrderRepository {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(OrderRepositoryImpl.class);
     @Override
     public int createOrder(int buyerId, double totalAmount) {
 

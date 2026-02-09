@@ -20,4 +20,6 @@ public interface ProductRepository {
     int getSellerIdByProductId(int productId);
 
     boolean isProductExistsForSeller(int productId, int sellerId);
+
+     boolean isProductActive(int productId);
 }

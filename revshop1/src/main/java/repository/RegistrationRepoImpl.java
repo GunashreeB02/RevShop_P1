@@ -5,12 +5,17 @@ import dto.LoginDTO;
 import dto.SecurityQuestionDTO;
 import dto.SellerDTO;
 import enumeration.ConnectionEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RegistrationRepoImpl implements RegistrationRepository {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(RegistrationRepoImpl.class);
 
 
     @Override
@@ -33,9 +38,10 @@ public class RegistrationRepoImpl implements RegistrationRepository {
                         rs.getString("question_text")
                 ));
             }
+            log.info("Fetched {} security questions", list.size());
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Error fetching security questions", e);
         }
 
         return list;
@@ -88,20 +94,22 @@ public class RegistrationRepoImpl implements RegistrationRepository {
                 psBuyer.executeUpdate();
 
                 con.commit();
+                log.info("Buyer registered successfully: {}", dto.getEmail());
                 return true;
             }
 
-           return false;
-
         } catch (Exception e) {
+            log.error("Error registering buyer: {}", dto.getEmail(), e);
+
             try {
                 if (con != null) con.rollback();
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } catch (SQLException ex) {
+                log.error("Rollback failed for buyer registration", ex);
             }
-            e.printStackTrace();
-            return false;
         }
+
+        return false;
+
 
     }
 
@@ -150,20 +158,22 @@ public class RegistrationRepoImpl implements RegistrationRepository {
                 psSeller.executeUpdate();
 
                 con.commit();
+                log.info("Seller registered successfully: {}", dto.getEmail());
                 return true;
-
             }
-            return false;
 
         } catch (Exception e) {
+            log.error("Error registering seller: {}", dto.getEmail(), e);
+
             try {
                 if (con != null) con.rollback();
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } catch (SQLException ex) {
+                log.error("Rollback failed for seller registration", ex);
             }
-            e.printStackTrace();
-            return false;
         }
+
+        return false;
+
     }
 
     @Override
@@ -181,15 +191,17 @@ public class RegistrationRepoImpl implements RegistrationRepository {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
+                log.info("Login success for email: {}", email);
                 int userId = rs.getInt("user_id");
                 String role = rs.getString("role");
                 String passwordFetched = rs.getString("password");
 
                 return new LoginDTO(userId, role, passwordFetched, true);
             }
+            log.warn("Login failed — email not found: {}", email);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Login error for email: {}", email, e);
         }
 
         return new LoginDTO(0, null,null, false);
@@ -367,6 +379,113 @@ public class RegistrationRepoImpl implements RegistrationRepository {
             return false;
         }
     }
+
+    @Override
+    public boolean isEmailExists(String email) {
+
+        String sql = "SELECT COUNT(*) FROM users WHERE email = ?";
+
+        try (Connection con = DriverManager.getConnection(
+                ConnectionEnum.URL.getValue(),
+                ConnectionEnum.USERNAME.getValue(),
+                ConnectionEnum.PASSWORD.getValue());
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0; // true if email already exists
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean isPhoneExistsInSeller(String phone) {
+
+        String sql = "SELECT COUNT(*) FROM seller_details WHERE phone = ?";
+
+        try (Connection con = DriverManager.getConnection(
+                ConnectionEnum.URL.getValue(),
+                ConnectionEnum.USERNAME.getValue(),
+                ConnectionEnum.PASSWORD.getValue());
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, phone);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0; // true if phone already exists
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+    @Override
+    public boolean isPhoneExistsInBuyer(String phone) {
+
+        String sql = "SELECT COUNT(*) FROM buyer_details WHERE phone = ?";
+
+        try (Connection con = DriverManager.getConnection(
+                ConnectionEnum.URL.getValue(),
+                ConnectionEnum.USERNAME.getValue(),
+                ConnectionEnum.PASSWORD.getValue());
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, phone);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0; // true if phone already exists
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+
+    @Override
+    public boolean isGstExists(String gstNumber) {
+
+        String sql = "SELECT COUNT(*) FROM seller_details WHERE gst_number = ?";
+
+        try (Connection con = DriverManager.getConnection(
+                ConnectionEnum.URL.getValue(),
+                ConnectionEnum.USERNAME.getValue(),
+                ConnectionEnum.PASSWORD.getValue());
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, gstNumber);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;   // true → GST already exists
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error checking GST: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+
+
 }
 
 

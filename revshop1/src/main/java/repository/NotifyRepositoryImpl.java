@@ -2,12 +2,17 @@ package repository;
 
 import dto.NotificationDTO;
 import enumeration.ConnectionEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class NotifyRepositoryImpl implements  NotifyRepository{
+
+    private static final Logger log =
+            LoggerFactory.getLogger(NotifyRepositoryImpl.class);
 
     @Override
     public void addNotification(int sellerId, String message) {
@@ -25,10 +30,15 @@ public class NotifyRepositoryImpl implements  NotifyRepository{
 
             ps.setInt(1, sellerId);
             ps.setString(2, message);
-            ps.executeUpdate();
 
+            int rows = ps.executeUpdate();
+
+            if (rows > 0) {
+                log.info("Notification added for sellerId: {}", sellerId);
+
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error adding notification for sellerId: {}", sellerId, e);
         }
     }
 
@@ -62,7 +72,7 @@ public class NotifyRepositoryImpl implements  NotifyRepository{
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Error fetching unread notifications for sellerId: {}", sellerId, e);
         }
         return list;
     }
@@ -83,7 +93,7 @@ public class NotifyRepositoryImpl implements  NotifyRepository{
             ps.executeUpdate();
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Error marking notification as read. ID: {}", notificationId, e);
         }
     }
 

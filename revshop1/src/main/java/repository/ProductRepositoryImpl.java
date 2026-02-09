@@ -14,7 +14,7 @@ public class ProductRepositoryImpl implements  ProductRepository{
 
 
     private static final Logger log =
-            LoggerFactory.getLogger(BuyerProductRepositoryImpl.class);
+            LoggerFactory.getLogger(ProductRepositoryImpl.class);
 
     @Override
     public boolean saveProductDetails(ProductDTO productDTO) {
@@ -34,10 +34,17 @@ public class ProductRepositoryImpl implements  ProductRepository{
             pst.setInt(8, productDTO.getStockThreshold());
             pst.setInt(9,productDTO.getCategoryId());
 
-            return pst.executeUpdate() > 0;
+            boolean saved = pst.executeUpdate() > 0;
+
+            if (saved)
+                log.info("Product saved successfully: {}", productDTO.getProductName());
+            else
+                log.warn("Product save failed for sellerId={}", productDTO.getSellerId());
+
+            return saved;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error saving product: {}", productDTO.getProductName(), e);
         }
         return false;
     }
@@ -63,8 +70,10 @@ public class ProductRepositoryImpl implements  ProductRepository{
                 categories.add(dto);
             }
 
+            log.info("Fetched {} categories", categories.size());
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Error fetching categories", e);
         }
 
         return categories;
@@ -75,10 +84,11 @@ public class ProductRepositoryImpl implements  ProductRepository{
         List<ProductDTO> products = new ArrayList<>();
 
         String sql = """
-            SELECT product_id, product_name, description, mrp, selling_price, stock, stock_threshold
-            FROM product
-            WHERE seller_id = ?
-        """;
+        SELECT product_id, product_name, description, mrp, selling_price, stock, stock_threshold
+        FROM product
+        WHERE seller_id = ?
+        AND is_active = 1
+    """;
 
         try (Connection con = DriverManager.getConnection(
                 ConnectionEnum.URL.getValue(),
@@ -102,9 +112,10 @@ public class ProductRepositoryImpl implements  ProductRepository{
 
                 products.add(dto);
             }
+            log.info("Seller {} has {} active products", sellerId, products.size());
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error fetching products for sellerId={}", sellerId, e);
         }
 
         return products;
@@ -125,18 +136,17 @@ public class ProductRepositoryImpl implements  ProductRepository{
             int rows = pst.executeUpdate();
 
             if (rows > 0) {
-                System.out.println("✅ Updated successfully");
+                log.info("Product updated successfully: productId={}", productId);
                 return true;
             } else {
-                System.out.println("❌ Product ID does not exist");
+                log.warn("Update failed — product not found: productId={}", productId);
                 return false;
             }
 
-
-
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error updating productId={}", productId, e);
         }
+
         return false;
 
     }
@@ -145,8 +155,10 @@ public class ProductRepositoryImpl implements  ProductRepository{
     public boolean deleteProductById(int productId) {
 
         String sql = """
-            DELETE FROM product
-            WHERE product_id = ?
+           UPDATE product
+                                        SET is_active = 0
+                                        WHERE product_id = ?
+                                        
         """;
 
         try (Connection con = DriverManager.getConnection(
@@ -158,12 +170,19 @@ public class ProductRepositoryImpl implements  ProductRepository{
             ps.setInt(1, productId);
 
 
-            int rows = ps.executeUpdate();
-            return rows > 0;
+            boolean deleted = ps.executeUpdate() > 0;
+
+            if (deleted)
+                log.info("Product soft-deleted: productId={}", productId);
+            else
+                log.warn("Delete failed — product not found: productId={}", productId);
+
+            return deleted;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error deleting productId={}", productId, e);
         }
+
         return false;
     }
 
@@ -195,7 +214,7 @@ public class ProductRepositoryImpl implements  ProductRepository{
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error fetching sellerId for productId={}", productId, e);
         }
         return 0;
     }
@@ -222,6 +241,34 @@ public class ProductRepositoryImpl implements  ProductRepository{
         } catch (SQLException e) {
             log.error("Error checking product ownership", e);
         }
+        return false;
+    }
+
+
+    public boolean isProductActive(int productId) {
+
+        String sql = "SELECT is_active FROM product WHERE product_id = ?";
+
+        try (Connection con = DriverManager.getConnection(
+                ConnectionEnum.URL.getValue(),
+                ConnectionEnum.USERNAME.getValue(),
+                ConnectionEnum.PASSWORD.getValue());
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, productId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("is_active") == 1;
+            }
+
+            log.warn("Product not found while checking active status: productId={}", productId);
+
+        } catch (Exception e) {
+            log.error("Error checking active status for productId={}", productId, e);
+        }
+
         return false;
     }
 

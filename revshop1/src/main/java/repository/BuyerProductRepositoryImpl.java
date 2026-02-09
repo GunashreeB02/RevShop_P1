@@ -24,6 +24,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
                p.selling_price, p.stock, c.category_name
         FROM product p
         JOIN categories c ON p.category_id = c.category_id
+        WHERE p.is_active = 1
     """;
 
         try (Connection con = DriverManager.getConnection(
@@ -61,7 +62,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
         FROM product p
         JOIN categories c ON p.category_id = c.category_id
         LEFT JOIN reviews r ON p.product_id = r.product_id
-        WHERE p.product_id = ?
+        WHERE p.product_id = ? AND  p.is_active = 1
     """;
 
         ProductDTO dto = null;
@@ -107,7 +108,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
                p.manufacturer, c.category_name, p.description, p.mrp
         FROM product p
         JOIN categories c ON p.category_id = c.category_id
-        WHERE LOWER(c.category_name) = ?
+        WHERE LOWER(c.category_name) = ? AND p.is_active = 1
     """;
 
         try (Connection con = DriverManager.getConnection(
@@ -198,8 +199,9 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
                p.stock
         FROM favourites f
         JOIN product p ON f.product_id = p.product_id
-        WHERE f.buyer_id = ?
+        WHERE f.buyer_id = ? AND p.is_active = 1
         """;
+
 
         try (Connection con = DriverManager.getConnection(
                 ConnectionEnum.URL.getValue(),
@@ -322,8 +324,9 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
             SELECT ci.product_id, p.product_name, p.manufacturer, ci.quantity, p.selling_price
             FROM cart_items ci
             JOIN product p ON ci.product_id = p.product_id
-            WHERE ci.cart_id = ?
+            WHERE ci.cart_id = ? AND p.is_active = 1
             """;
+
 
         try (Connection con = DriverManager.getConnection(
                 ConnectionEnum.URL.getValue(),
@@ -528,10 +531,13 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
                c.category_name
         FROM product p
         JOIN categories c ON p.category_id = c.category_id
-        WHERE LOWER(p.product_name) LIKE ?
-           OR LOWER(p.description) LIKE ?
-           OR LOWER(p.manufacturer) LIKE ?
-           OR LOWER(c.category_name) LIKE ?
+       WHERE (
+                                                           LOWER(p.product_name) LIKE ?
+                                                        OR LOWER(p.description) LIKE ?
+                                                        OR LOWER(p.manufacturer) LIKE ?
+                                                        OR LOWER(c.category_name) LIKE ?
+                                                       )
+                                                       AND p.is_active = 1
     """;
 
         try (Connection con = DriverManager.getConnection(
@@ -570,7 +576,7 @@ public class BuyerProductRepositoryImpl implements  BuyerProductRepository{
 
     @Override
     public boolean isProductExists(int productId) {
-        String sql = "SELECT 1 FROM product WHERE product_id = ?";
+        String sql = "SELECT 1 FROM product WHERE product_id = ? AND is_active = 1";
 
         try (Connection con = DriverManager.getConnection( ConnectionEnum.URL.getValue(),
                 ConnectionEnum.USERNAME.getValue(),

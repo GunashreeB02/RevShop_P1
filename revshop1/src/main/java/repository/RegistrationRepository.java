@@ -29,4 +29,12 @@ public interface RegistrationRepository {
 
     boolean resetPassword(String email, String newPassword);
 
+    boolean isEmailExists(String email);
+
+    boolean isPhoneExistsInSeller(String phone);
+    boolean isPhoneExistsInBuyer(String phone);
+    boolean isGstExists(String gstNumber);
+
+
+
 }

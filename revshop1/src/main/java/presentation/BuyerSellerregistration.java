@@ -64,7 +64,7 @@ public class BuyerSellerregistration {
         RegistrationService service=new RegistrationServiceImpl();
 
         SellerDTO dto = new SellerDTO();
-        System.out.println("--- Buyer Registration ---");
+        System.out.println("--- Seller Registration ---");
         System.out.println("Choose a security question:");
         for (SecurityQuestionDTO q : service.getAllQuestions()) {
             System.out.println(q.getQuestionId() + ". " + q.getQuestionText());
@@ -117,11 +117,11 @@ public class BuyerSellerregistration {
         RegistrationService service=new RegistrationServiceImpl();
         String name = service.login(email,password);
 
-        if(name.equals("Email does not exists"))
+        if(name.equals("Email does not exist"))
         {
-            System.out.println("Email does not exists");
+            System.out.println("Email does not exist");
         }
-        else if(name.equals("Password is Incorrect"))
+        else if(name.equals("Incorrect Password"))
         {
             System.out.println("Password is Incorrect");
         }

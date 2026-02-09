@@ -60,7 +60,7 @@ public class BuyerProductMenu {
 
                     if (dto == null) {
                         System.out.println("Product not found");
-                        return;
+                        break;
                     }
 
                     System.out.println("\nProduct Details");
@@ -89,7 +89,7 @@ public class BuyerProductMenu {
 
                         List<ProductDTO> products = service.searchByCategoryName(category);
                         if (products.isEmpty()) {
-                            System.out.println("No products found");
+                            System.out.println("No products found in this category");
                         } else {
                             products.forEach(System.out::println);
                         }
@@ -158,7 +158,6 @@ public class BuyerProductMenu {
 
         RegistrationService service=new RegistrationServiceImpl();
 
-        sc.nextLine();
         System.out.println("Current Password:");
         String currentPassword= sc.nextLine();
         System.out.println("New Password:");
@@ -342,7 +341,15 @@ public class BuyerProductMenu {
         billing.setAddressType("BILLING");
 
         if (same.equalsIgnoreCase("yes")) {
-            billing = shipping;
+            billing = new OrderAddressDTO();
+            billing.setOrderId(shipping.getOrderId());
+            billing.setFullName(shipping.getFullName());
+            billing.setPhone(shipping.getPhone());
+            billing.setAddressLine1(shipping.getAddressLine1());
+            billing.setAddressLine2(shipping.getAddressLine2());
+            billing.setCity(shipping.getCity());
+            billing.setState(shipping.getState());
+            billing.setPincode(shipping.getPincode());
             billing.setAddressType("BILLING");
         } else {
             System.out.println("\nENTER BILLING DETAILS");
@@ -435,9 +442,9 @@ public class BuyerProductMenu {
         );
         if (success) {
 
-            System.out.println("\n✅ Order placed successfully!");
+            System.out.println("\n Order placed successfully!");
         } else {
-            System.out.println("\n❌ Order failed!");
+            System.out.println("\n Order failed!");
         }
     }
 
